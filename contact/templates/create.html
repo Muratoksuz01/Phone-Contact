@@ -1,0 +1,57 @@
+{%extends "base.html"%}
+
+
+
+{%block body%}
+
+<form method="POST">
+    {% csrf_token %}
+   
+    {{contactBookForm}}
+    <input type="submit" value="Create" class="btn btn-primary">
+
+
+</form>
+
+{% endblock %}
+
+
+
+<!--
+       {% if error %}
+    <div class="alert alert-denger">
+        {{error}}
+    </div>
+    {% endif %}
+    <div class="row">
+        <div class="col">
+            <label for="text" class="form-label">Mobile Number:</label>
+            <input type="text" required class="form-control" name="Mobile_Number">
+        </div>
+
+
+        <div class="col">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" required class="form-control" name="email">
+        </div>
+    </div>
+
+
+
+    <div class="row">
+        <div class="col">
+           <label for="label" class="form-label">Label</label>
+            <input type="text" required class="form-control" name="label"> 
+        </div>
+        <div class="col">
+            <label for="Persoon_Number" class="form-label">Person Name</label>
+            <input type="text" required class="form-control" name="Person_Number">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <input type="file" required class="form-control" name="Image">
+    </div>
+
+
+-->
