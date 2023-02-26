@@ -1,78 +1,75 @@
-from django.shortcuts import render,redirect,Http404 
-from django.contrib.auth import login,authenticate,logout
-from django.contrib.auth.models import User
-from .forms import  ContactBookForm
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth import login, authenticate
+from django.db.models import Q
+from .forms import ContactBookForm, SearchForm
 from .models import ContactBook
-from django.contrib import messages
 
-# Create your views here.
-
-def logout_reguest(requeest):
-    if requeest.user.is_authenticated():
-        logout(requeest )
-        return redirect("index")
-    else:
-        return Http404()
-def index(request):
-    allcontact=ContactBook.objects.filter(user=request.user).order_by("-created")
-    return render(request,"index.html",context={"allcontact":allcontact})
-
-def LoginView(request):
-    if request.user.is_authenticated:
-        return redirect("index")
-    if request.method=="POST":#post eildimi diye bakıyor 
-        username=request.POST["username"]# bilgileri alıyorum 
-        password=request.POST["password"]
-        user=authenticate(request,username=username,password=password)#burada kişi varmı diye bakıyorum 
-        if user is not None:
-            login(request,user)
-            return redirect("index")
-        else :
-            return render (request,"login.html",{
-                "error":"username yada parola yanlış"
-            })
-    return render(request,"login.html")
-
-def register(request):
-    if request.user.is_authenticated:
-        return redirect("index")
+def loginView(request):
+    authenticationForm = AuthenticationForm()
     if request.method=="POST":
-        username=request.POST["username"]
-        password=request.POST["password"]
-        repassword=request.POST["repassword"]
-        if password==repassword:
-            if User.objects.filter(username=username).exists():
-                return render(request,"register.html",{
-                "error":"kullanıcı mevcut",
-                })
-            else:
-                user=User.objects.create_user(username=username,password=password)
-                user.save()
-                messages.success(request,"basarılı bir şekilde olusturdunuz")
-
-                return redirect("login")
+        authenticationForm = AuthenticationForm(request, data=request.POST or None)
+        if authenticationForm.is_valid():
+            username = authenticationForm.cleaned_data["username"]
+            password = authenticationForm.cleaned_data["password"]
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user=user)
+                return redirect("index")
         else:
-            return render(request,"register.html",{"error":"şifreler aynı değil"})
-    return render(request,"register.html")
+            print(authenticationForm.errors)
 
-def create(request):# burada farklı bir metot yapılıyor djangonun sablonlarını kullaıyoruz
-    if request.user.is_authenticated:#buradamısafır kullanıcılar arama cubuguna bile yazsa buraya bakmasını engelliyorum 
-        contactBookForm=ContactBookForm()
-        if request.method=="POST":
-            contactBookForm = ContactBookForm(request.POST or None,request.FILES or None)
-        if contactBookForm.is_valid():
-            contactBookForm=contactBookForm.save(commit=False)
-            contactBookForm.user=request.user
-            contactBookForm.save()
-            messages.success(request,"basarılı bir şekilde olusturdunuz")
+    return render(request, template_name="login.html", context={"authenticationForm" : authenticationForm})
 
-            return redirect("index")
-        else:
-            print (contactBookForm.errors)
-
-        return render(request,"create.html",context={"contactBookForm":contactBookForm})
-   
-
+def index(request):
+    allContact = ContactBook.objects.filter(user=request.user).order_by("-created")
+    searchForm = SearchForm()
+    if request.method=="POST":
+        searchForm = SearchForm(request.POST or None)
+        if searchForm.is_valid():
+            search_term = request.POST.get("search")
+            return redirect("search", search_term)
     else:
-        return Http404()
+        print(searchForm.errors)
+    return render(request,template_name="index.html", context={"allContact" : allContact, "searchForm" : searchForm})
+
+def search(request, search_term):
+    filteredData = ContactBook.objects.filter(Q(mobile_number__icontains=search_term) | Q(person_name__icontains=search_term))
+    print(filteredData)
+    return render(request,template_name="search.html", context={"filteredData" : filteredData})
+
+def contactBookDetail(request, pk):
+    contact = ContactBook.objects.get(id=pk)
+    return render(request, template_name="details.html", context={'contact' : contact})   
+
+def registration(request):
+    userCreationForm = UserCreationForm()
+    if request.method=="POST":
+        userCreationForm = UserCreationForm(request.POST or None)
+        if userCreationForm.is_valid():
+            username = userCreationForm.cleaned_data["username"]
+            password = userCreationForm.cleaned_data["password1"]
+            userCreationForm = userCreationForm.save()
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user=user)
+                return redirect("index")
+    else:
+        print(userCreationForm.errors)
+    return render(request,template_name="registration.html", context={"UserCreationForm" :UserCreationForm})
+
+def create(request):
+    contactBookForm = ContactBookForm()
+    if request.method=="POST":
+        contactBookForm = ContactBookForm(request.POST or None, request.FILES or None)
+        if contactBookForm.is_valid():
+            contactBookForm = contactBookForm.save(commit=False)
+            contactBookForm.user = request.user
+            contactBookForm.save()
+            redirect("index")
+    else:
+        print(contactBookForm.errors)
+    return render(request, template_name="create.html", context={"contactBookForm" : contactBookForm})
+
+
 

@@ -1,15 +1,14 @@
+
 from django.urls import path
-from .views import *
+from django.contrib.auth.views import LogoutView
+from .views import loginView, index, registration, create, contactBookDetail, search
 
-
-urlpatterns=[
-
-    path("",index,name="index"),
-    path("login/",LoginView,name="login"),
-    path("register/",register,name="register"),
-    path("logout/",logout_reguest,name="logout"),
-    path("create/",create,name="create"),
-
-
-
+urlpatterns = [
+    path("login/", loginView, name="loginView"),
+    path("", index, name="index"),
+    path("logout/", LogoutView.as_view(next_page="/login/"), name="logout"),
+    path("registration/", registration, name="registration"),
+    path("create/", create, name="create"),
+    path("deatils/<int:pk>/", contactBookDetail, name="contactBookDetail"),
+    path("search/<str:search_term>/", search, name="search"),
 ]
